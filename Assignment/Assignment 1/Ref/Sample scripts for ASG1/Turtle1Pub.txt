@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+import rospy
+import random
+from geometry_msgs.msg import Twist
+
+def main():
+    # Initialize the node for turtle1 random movement.
+    rospy.init_node('turtle1_random_move', anonymous=True)
+    # Publisher for turtle1's movement commands.
+    pub = rospy.Publisher('turtle1/cmd_vel', Twist, queue_size=10)
+    rate = rospy.Rate(1)  # 1 Hz loop rate
+
+    while not rospy.is_shutdown():
+        command = Twist()
+        # Set a random forward speed between 0.0 and 2.0.
+        command.linear.x = random.uniform(0.0, 2.0)
+        # Set a random angular speed between -2.0 and 2.0.
+        command.angular.z = random.uniform(-2.0, 2.0)
+        pub.publish(command)
+        rospy.loginfo("Turtle1 command: linear.x=%.2f angular.z=%.2f", command.linear.x, command.angular.z)
+        rate.sleep()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass

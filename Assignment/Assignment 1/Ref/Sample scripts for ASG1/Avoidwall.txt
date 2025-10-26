@@ -1,0 +1,64 @@
+#!/usr/bin/env python
+
+import rospy
+from std_msgs.msg import String
+from geometry_msgs.msg import Twist
+from turtlesim.msg import Pose
+import time
+import turtlesim.srv
+from random import randint, random
+from math import pow, sqrt
+  
+def start():
+    while not rospy.is_shutdown():
+        # Move turtle 1
+        command.linear.x = random()
+        command.angular.z = randint(-90,90)*PI/180
+        t1_pub.publish(command)
+        time.sleep(.5)
+        # Detect wall & turtle
+        if(near_wall(t1_pos.x, t1_pos.y)):
+            command.linear.x = -command.linear.x
+            command.angular.z = -command.angular.z
+            t1_pub.publish(command)
+            time.sleep(.5)
+            command.linear.x = 0
+            command.angular.z = PI
+            t1_pub.publish(command)
+            time.sleep(.5)
+           
+    
+def near_wall(x, y):
+    #left #right #top #bottom
+    if(x < 1 or x > 10 or y < 1 or y > 10):
+        return True
+    else:
+        return False
+
+          
+def t1_update_pose(data):
+    # Callback function which is called when a new message of type Pose is received by the subscriber.
+    global t1_pos
+    t1_pos = data
+    t1_pos.x = round(t1_pos.x, 4)
+    t1_pos.y = round(t1_pos.y, 4)
+    
+    
+if __name__ == '__main__':
+    try:
+        # Init
+        rospy.init_node('turtle1_publisher', anonymous=True)
+        rate = rospy.Rate(1) # 1hz
+        command = Twist()
+        PI = 3.14159
+        # Turtle 1
+        t1_pub = rospy.Publisher('turtle1/cmd_vel', Twist, queue_size=1)
+        t1_pos = Pose()
+        t1_sub = rospy.Subscriber('turtle1/pose', Pose, t1_update_pose)
+
+        # Start moving
+        start()      
+    except rospy.ROSInterruptException:
+        pass
+       
+            

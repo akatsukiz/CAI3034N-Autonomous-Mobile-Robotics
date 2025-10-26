@@ -1,0 +1,28 @@
+<!-- Launch file for the turtle chase simulation. This file initialises the TurtleSim environment, spawns multiple prey turtles at specified positions, and starts a predator turtle to chase them. -->
+
+<launch>
+    <!-- Launch the TurtleSim node to create the simulation environment -->
+    <node pkg="turtlesim" type="turtlesim_node" name="sim"/>
+
+    <!-- Launch the prey node to spawn and control multiple prey turtles -->
+    <node pkg="turtle_chase" type="prey_node.py" name="prey_node" output="screen">
+        <!-- Initial position for turtle2: top left corner -->
+        <param name="turtle2_x" value="2.0"/>
+        <param name="turtle2_y" value="8.0"/>
+
+        <!-- Initial position for turtle3: bottom right corner -->
+        <param name="turtle3_x" value="8.0"/>
+        <param name="turtle3_y" value="2.0"/>
+
+        <!-- Initial position for turtle4: top right corner -->
+        <param name="turtle4_x" value="9.0"/>
+        <param name="turtle4_y" value="9.0"/>
+
+        <!-- Initial position for turtle5: center of the arena -->
+        <param name="turtle5_x" value="5.0"/>
+        <param name="turtle5_y" value="5.0"/>
+    </node>
+
+    <!-- Launch the predator node to control turtle1 as the predator -->
+    <node pkg="turtle_chase" type="predator_node.py" name="predator_node" output="screen"/>
+</launch>

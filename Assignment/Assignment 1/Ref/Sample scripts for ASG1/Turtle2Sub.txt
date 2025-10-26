@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+import rospy
+import math
+from geometry_msgs.msg import Twist
+from turtlesim.msg import Pose
+from turtlesim.srv import Spawn
+
+# Global variables to store poses.
+turtle1_pose = None  # Pose of turtle1 (the target)
+turtle2_pose = None  # Pose of turtle2 (the follower)
+
+def turtle1_pose_callback(data):
+    global turtle1_pose
+    turtle1_pose = data
+
+def turtle2_pose_callback(data):
+    global turtle2_pose
+    turtle2_pose = data
+
+def main():
+    rospy.init_node('turtle2_follower', anonymous=True)
+    
+    # Spawn turtle2 automatically using the spawn service.
+    rospy.wait_for_service('spawn')
+    try:
+        spawn_turtle = rospy.ServiceProxy('spawn', Spawn)
+        # Spawn turtle2 at x=5.0, y=5.0 with 0 orientation and name "turtle2"
+        response = spawn_turtle(5.0, 5.0, 0.0, "turtle2")
+        rospy.loginfo("Spawned turtle2: %s", response.name)
+    except rospy.ServiceException as e:
+        rospy.logerr("Service call failed: %s", e)
+    
+    # Subscribe to turtle1's pose (the target) and turtle2's pose.
+    rospy.Subscriber('turtle1/pose', Pose, turtle1_pose_callback)
+    rospy.Subscriber('turtle2/pose', Pose, turtle2_pose_callback)
+    
+    # Publisher for turtle2's movement commands.
+    pub = rospy.Publisher('turtle2/cmd_vel', Twist, queue_size=10)
+    rate = rospy.Rate(10)  # 10 Hz loop rate
+
+    while not rospy.is_shutdown():
+        if turtle1_pose is None or turtle2_pose is None:
+            # Wait until both poses are available.
+            rate.sleep()
+            continue
+
+        # Calculate the difference between turtle1 and turtle2 positions.
+        error_x = turtle1_pose.x - turtle2_pose.x
+        error_y = turtle1_pose.y - turtle2_pose.y
+        # Compute the distance between the two turtles.
+        distance = math.sqrt(error_x**2 + error_y**2)
+        # Determine the angle from turtle2 to turtle1.
+        desired_angle = math.atan2(error_y, error_x)
+        # Calculate the angular error.
+        angular_error = desired_angle - turtle2_pose.theta
+
+        # Normalize the angular error to be between -pi and pi.
+        while angular_error > math.pi:
+            angular_error -= 2 * math.pi
+        while angular_error < -math.pi:
+            angular_error += 2 * math.pi
+
+        # Create a Twist message for turtle2.
+        command = Twist()
+        # Use a proportional controller for linear velocity.
+        command.linear.x = min(1.5 * distance, 2.0)
+        # Use a proportional controller for angular velocity.
+        command.angular.z = 4.0 * angular_error
+
+        pub.publish(command)
+        rate.sleep()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass
